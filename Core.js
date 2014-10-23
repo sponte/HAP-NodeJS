@@ -5,12 +5,18 @@ var accessoryController_Factor = new require("./AccessoryController.js");
 var service_Factor = new require("./Service.js");
 var characteristic_Factor = new require("./Characteristic.js");
 
+var sys = require('sys');
+//var lightwaverf = require("child_process").exec('lightwaverf').unref();
+var exec = require('child_process').exec;
+function puts(error, stdout, stderr) { sys.puts(stdout) };
+
+
 console.log("HAP-NodeJS starting...");
 
 storage.initSync();
 
 var accessoryController = new accessoryController_Factor.AccessoryController();
-var infoService = generateAccessoryInfoService("Test Accessory 1","Rev 1","A1S2NASF88EW","Oltica");
+var infoService = generateAccessoryInfoService("Test Accessory 1","Rev 1","A1S2NASF88EW","Nlr");
 var lightService = generateLightService();
 accessoryController.addService(infoService);
 accessoryController.addService(lightService);
@@ -52,6 +58,12 @@ function generateLightService() {
 	}
 	var lightSwitchChar = new characteristic_Factor.Characteristic(onOptions, function(value) {
 		console.log("Light Status Change:",value);
+
+                var lightcmd = "lightwaverf Woonkamer Funnel ";
+                if(value) lightcmd = lightcmd + "on";
+                else lightcmd = lightcmd + "off";
+                console.log(lightcmd);
+                exec(lightcmd);
 	});
 	lightService.addCharacteristic(lightSwitchChar);
 
