@@ -6,6 +6,7 @@ var service_Factor = new require("./Service.js");
 var characteristic_Factor = new require("./Characteristic.js");
 
 var accessoryFunnel = new require("./AccessoryFunnel.js")
+var accessoryGreggs = new require("./AccessoryGreggs.js")
 
 var sys = require('sys');
 var exec = require('child_process').exec;
@@ -22,10 +23,11 @@ console.log("HAP-NodeJS starting...");
 storage.initSync();
 
 var accessoryController = new accessoryController_Factor.AccessoryController();
-var infoService = accessoryFunnel.generateAccessoryInfoService(service_Factor,"Test Accessory 1","Rev 1","A1S2NASF88EW","Nlr");
-var lightService = accessoryFunnel.generateLightService(service_Factor);
-accessoryController.addService(infoService);
-accessoryController.addService(lightService);
 
-var accessory = new accessory_Factor.Accessory("Test Accessory 1", "1A:2B:3C:4D:5E:FF", storage, parseInt(51822), "031-45-154", accessoryController);
+var infoServiceFunnel = accessoryFunnel.generateAccessoryInfoService(service_Factor,"Light Funnel","Rev 1","A1S2NASF88EW","Nlr");
+var lightServiceFunnel = accessoryFunnel.generateLightService(service_Factor);
+accessoryController.addService(infoServiceFunnel);
+accessoryController.addService(lightServiceFunnel);
+
+var accessory = new accessory_Factor.Accessory("Light Funnel", "1A:2B:3C:4D:5E:FF", storage, parseInt(51822), "031-45-154", accessoryController);
 accessory.publishAccessory();
