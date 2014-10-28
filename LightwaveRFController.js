@@ -2,11 +2,6 @@ var sys = require('sys');
 var exec = require('child_process').exec;
 function puts(error, stdout, stderr) { sys.puts(stdout) };
 
-function LRFController(timeout) {
-  this.timeout = timeout || 100;
-  this.queue = [];
-  this.ready = true;
-}
 
 LRFController.prototype.send = function(cmd, callback) {
   //sendCmdToLRF(cmd);
@@ -32,11 +27,11 @@ LRFController.prototype.process = function() {
   }, this.timeout);
 };
 
-function LRFController() {
+function LRFController(timeout) {
 	if (!(this instanceof LRFController))  {
-		return new LRFController();
+		return new LRFController(timeout);
 	}
-        this.timeout = 100;
+        this.timeout = timeout || 1000;
         this.queue = [];
         this.ready = true;
 }

@@ -23,26 +23,22 @@ storage.initSync();
 
 var accessoryControllerFunnel = new accessoryController_Factor.AccessoryController();
 
-var infoServiceFunnel = accessoryFunnel.generateAccessoryInfoService("Light Funnel","Rev 1","A1S2NASF88EW","Nlr");
+var infoServiceFunnel = accessoryFunnel.generateAccessoryInfoService("Funnel","Rev 1","A1S2NASF88EW","Nlr");
 var lightServiceFunnel = accessoryFunnel.generateLightService(lightwaveRFController);
 accessoryControllerFunnel.addService(infoServiceFunnel);
 accessoryControllerFunnel.addService(lightServiceFunnel);
 
-//var accessoryFunnel = new accessory_Factor.Accessory("Light Funnel", "1A:2B:3C:4D:5E:FF", storage, parseInt(31822), "031-45-154", accessoryControllerFunnel);
-//accessoryFunnel.publishAccessory();
+var accessoryFunnel = new accessory_Factor.Accessory("Funnel", "1A:2B:3C:4D:5E:FF", storage, parseInt(31822), "031-45-154", accessoryControllerFunnel);
+accessoryFunnel.publishAccessory();
 
 
 var accessoryControllerGreggs = new accessoryController_Factor.AccessoryController();
 
-var infoServiceGreggs = accessoryGreggs.generateAccessoryInfoService("Light Greggs","Rev 1","A1S2NASF88EW","Nlr");
+var infoServiceGreggs = accessoryGreggs.generateAccessoryInfoService("Greggs","Rev 1","A1S2NASF88EW","Nlr");
 var lightServiceGreggs = accessoryGreggs.generateLightService(lightwaveRFController);
 accessoryControllerGreggs.addService(infoServiceGreggs);
 accessoryControllerGreggs.addService(lightServiceGreggs);
 
-
-var accessoryFunnel = new accessory_Factor.Accessory("Light Funnel", "1A:2B:3C:4D:5E:FF", storage, parseInt(31822), "031-45-154", accessoryControllerFunnel);
-accessoryFunnel.publishAccessory();
-
-var accessoryGreggs = new accessory_Factor.Accessory("Light Greggs", "CA:2B:3C:4D:5E:BC", storage, parseInt(51822), "031-45-154", accessoryControllerGreggs);
+var accessoryGreggs = new accessory_Factor.Accessory("Greggs", "CA:2B:3C:4D:5E:BC", storage, parseInt(51822), "031-45-154", accessoryControllerGreggs);
 accessoryGreggs.publishAccessory();
 

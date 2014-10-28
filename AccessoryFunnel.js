@@ -16,7 +16,7 @@ module.exports = {
 			"pr"
 		],
 		format: "string",
-		initialValue: "Light Funnel",
+		initialValue: "Funnel",
 		supportEvents: false,
 		supportBonjour: false,
 		manfDescription: "Bla",
