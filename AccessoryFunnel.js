@@ -53,6 +53,32 @@ module.exports = {
 	});
 	lightService.addCharacteristic(lightSwitchChar);
 
+        var brightOptions = {
+                type: "00000008-0000-1000-8000-0026BB765291",
+                perms: [
+                        "pw",
+                        "pr",
+                        "ev"
+                ],
+                format: "int",
+                initialValue: 0,
+                supportEvents: false,
+                supportBonjour: false,
+                manfDescription: "Dim the Light",
+                designedMaxLength: 1,
+        }
+        var lightBrightChar = new characteristic_Factor.Characteristic(brightOptions, function(value) {
+                console.log("Light Brightness Change:",value);
+
+                var lightcmd = "lightwaverf Woonkamer Funnel " + value;
+                console.log(lightcmd);
+                //exec(lightcmd);
+                lightwaveRFController.exec(lightcmd, function() {
+                        console.log('Command sent');
+                });
+        });
+        lightService.addCharacteristic(lightBrightChar);
+
 	return lightService;
   },
   generateAccessoryInfoService: function (name, model, sn, manufacturer) {
