@@ -5,7 +5,6 @@ var characteristic_Factor = new require("./Characteristic.js");
 //var exec = require('child_process').exec;
 //function puts(error, stdout, stderr) { sys.puts(stdout) };
 
-
 module.exports = {
   generateLightService: function (lightwaveRFController) {
 	var lightService = new service_Factor.Service("00000043-0000-1000-8000-0026BB765291");
@@ -16,7 +15,7 @@ module.exports = {
 			"pr"
 		],
 		format: "string",
-		initialValue: "Light Funnel",
+		initialValue: "Light Greggs",
 		supportEvents: false,
 		supportBonjour: false,
 		manfDescription: "Bla",
@@ -42,7 +41,7 @@ module.exports = {
 	var lightSwitchChar = new characteristic_Factor.Characteristic(onOptions, function(value) {
 		console.log("Light Status Change:",value);
 
-                var lightcmd = "lightwaverf Woonkamer Funnel ";
+                var lightcmd = "lightwaverf Woonkamer Eettafel ";
                 if(value) lightcmd = lightcmd + "on";
                 else lightcmd = lightcmd + "off";
                 console.log(lightcmd);
