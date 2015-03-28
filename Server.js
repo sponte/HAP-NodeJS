@@ -23,7 +23,7 @@ HAPServer.prototype = {
 	startHAPServer: function startHAPServer(targetPort) {
 		if (this.hapServer !== undefined) {
 			this.hapServer.listen(targetPort);
-			console.log("HAP Server is listening " + targetPort);
+			console.log("HAP Server is listening");
 		}
 	},
 	createHAPServer: function createHAPServer() {

@@ -4,10 +4,8 @@ function puts(error, stdout, stderr) { sys.puts(stdout) };
 
 
 LRFController.prototype.send = function(cmd, callback) {
-  //sendCmdToLRF(cmd);
-  exec(cmd);
+  exec(cmd, callback);
   if (callback) callback();
-  // or simply `sendCmdToLRF(cmd, callback)` if sendCmdToLRF is async
 };
 
 LRFController.prototype.exec = function() {
