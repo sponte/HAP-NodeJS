@@ -2,11 +2,10 @@ var http = require("http");
 var crypto = require("crypto");
 var srp = require("srp");
 var hkdf = require("node-hkdf");
-var url = require('url');
+var url = require("url");
+var ed25519 = require("ed25519");
 var tlvHandler = require("./TLV-Handler.js");
 var encryption = require("./Encryption.js");
-var nacl_factory = require("js-nacl");
-var nacl = nacl_factory.instantiate();
 
 function HAPServer(accessoryInfo, callback, persistStore, accessoryController) {
 	if (!(this instanceof HAPServer))  {
@@ -31,6 +30,7 @@ HAPServer.prototype = {
 		var server = http.createServer(
 			function(request, response) {
 				var that = this;
+				that.currentSessionPort = request.socket.remotePort;
 				switch(request.url) {
 					case "/pair-setup":
 						request.on('data', function(chunk) {
@@ -74,6 +74,7 @@ HAPServer.prototype = {
 				};
 			}.bind(this)
 		);
+		server.timeout = 0;
 		return server;
 	},
 	//Pairings
@@ -84,12 +85,12 @@ HAPServer.prototype = {
 			console.log("Handle Add Pairing Info");
 			var clientUsername = objects[1];
 			var clientLTPK = objects[3];
-			this.persistStore.setItem(clientUsername.toString(),clientLTPK.toString("hex"));
+			this.persistStore.setItem(this.accessoryInfo.username + clientUsername.toString(),clientLTPK.toString("hex"));
 		} else if (requestType == 4) {
 			//Handle Remove
 			console.log("Handle Remove Pairing Info");
 			var clientUsername = objects[1];
-			this.persistStore.removeItem(clientUsername.toString());
+			this.persistStore.removeItem(this.accessoryInfo.username + clientUsername.toString());
 		}
 		this.persistStore.persistSync();
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
@@ -115,7 +116,6 @@ HAPServer.prototype = {
 	//Accessories
 	responseAccessories: function responseAccessories(response) {
 		response.writeHead(200, {"Content-Type": "application/hap+json"});
-		
 		response.write(this.accessoryController.jsonPresentation());
 		response.end();
 	},
@@ -138,29 +138,33 @@ HAPServer.prototype = {
 		}
 	},
 	processVerifyStepOne: function processVerifyStepOne(objects, response) {
+		console.log("Start Verify M1");
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
 
 		var clientPublicKey = objects[3];
-		this.session_clientPublicKey = clientPublicKey;
+		this.tcpServer.retrieveSession(this.currentSessionPort).session_clientPublicKey = clientPublicKey;
 		var secretKey = encryption.generateCurve25519SecretKey();
 		var publicKey = encryption.generateCurve25519PublicKeyFromSecretKey(secretKey);
 		var sharedSec = encryption.generateCurve25519SharedSecKey(secretKey, clientPublicKey);
 
-		this.session_server_privateKey = secretKey;
-		this.session_server_publicKey = publicKey;
-		this.session_server_sharedKey = sharedSec;
+		this.tcpServer.retrieveSession(this.currentSessionPort).session_server_privateKey = secretKey;
+		this.tcpServer.retrieveSession(this.currentSessionPort).session_server_publicKey = publicKey;
+		this.tcpServer.retrieveSession(this.currentSessionPort).session_server_sharedKey = sharedSec;
 
 		var usernameData = Buffer(this.accessoryInfo.username);
 
 		var material = Buffer.concat([publicKey,usernameData,clientPublicKey]);
-		var serverProof = Buffer(nacl.crypto_sign_detached(toArrayBuffer(material),toArrayBuffer(this.server_sign_keyPair.signSk)));
+
+		var privateKey = Buffer(this.server_sign_keyPair.signSk);
+
+		var serverProof = ed25519.Sign(material, privateKey);
 
 		var enc_salt = new Buffer("Pair-Verify-Encrypt-Salt");
 		var enc_info = new Buffer("Pair-Verify-Encrypt-Info");
 
 		var output_key = hkdf.HKDF("sha512",enc_salt,sharedSec,enc_info,32);
 		output_key = output_key.slice(0,32);
-		this.hkdf_pair_enc_key = output_key;
+		this.tcpServer.retrieveSession(this.currentSessionPort).hkdf_pair_enc_key = output_key;
 		var message = Buffer.concat([tlvHandler.encodeTLV(0x01,usernameData),tlvHandler.encodeTLV(0x0a,serverProof)]);
 		var ciphertextBuffer = Buffer(Array(message.length));
 		var macBuffer = Buffer(Array(16));
@@ -173,8 +177,10 @@ HAPServer.prototype = {
 		response.write(encDataResp);
 		response.write(pubKeyResp);
 		response.end();
+		console.log("Verify M1 Finished");
 	},
 	processVerifyStepTwo: function processVerifyStepTwo(objects, response, request) {
+		console.log("Start Verify M3");
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
 
 		var messageData = Buffer(objects[5].length - 16);
@@ -183,26 +189,35 @@ HAPServer.prototype = {
 		objects[5].copy(authTagData,0,objects[5].length - 16,objects[5].length);
 
 		var plaintextBuffer = Buffer(messageData.length);
-		if (encryption.verifyAndDecrypt(this.hkdf_pair_enc_key,Buffer("PV-Msg03"),messageData,authTagData,null,plaintextBuffer)) {
+		if (encryption.verifyAndDecrypt(this.tcpServer.retrieveSession(this.currentSessionPort).hkdf_pair_enc_key,Buffer("PV-Msg03"),messageData,authTagData,null,plaintextBuffer)) {
 			var tlvData = tlvHandler.decodeTLV(plaintextBuffer);
 			var clientUsername = tlvData[0x01];
 			var proof = tlvData[0x0a];
 
-			var material = Buffer.concat([this.session_clientPublicKey,clientUsername,this.session_server_publicKey]);
+			var material = Buffer.concat([this.tcpServer.retrieveSession(this.currentSessionPort).session_clientPublicKey,clientUsername,this.tcpServer.retrieveSession(this.currentSessionPort).session_server_publicKey]);
 
-			var clientLTPK = Buffer(this.persistStore.getItem(clientUsername.toString()),"hex");
-			
-			if (nacl.crypto_sign_verify_detached(toArrayBuffer(proof), toArrayBuffer(material), toArrayBuffer(clientLTPK))) {
-				response.write(Buffer([0x06,0x01,0x04]));
-				response.end();
-				this.callback(request.socket.remotePort, this.session_server_sharedKey);
+			var keyContext = this.persistStore.getItem(this.accessoryInfo.username + clientUsername.toString());
+
+			if (keyContext) {
+				var clientLTPK = Buffer(keyContext,"hex");
+				if (ed25519.Verify(material, proof, clientLTPK)) {
+					response.write(Buffer([0x06,0x01,0x04]));
+					response.end();
+					console.log("M3: Verify Success");
+					this.callback(request.socket.remotePort, this.tcpServer.retrieveSession(this.currentSessionPort).session_server_sharedKey);
+				} else {
+					console.log("M3: Invalid Signature");
+					response.write(Buffer([0x07,0x01,0x04]));
+					response.end();
+				}
 			} else {
-				console.log("Invalid Signature");
-				response.write(Buffer([0x07,0x01,0x04]));
+				console.log("M3: Cannot find Client LTPK");
+				response.write(Buffer([0x07,0x01,0x02]));
 				response.end();
 			}
+			
 		} else {
-			console.log("Invalid Signature");
+			console.log("M3: Invalid Signature");
 			response.write(Buffer([0x07,0x01,0x02]));
 			response.end();
 		}
@@ -229,6 +244,7 @@ HAPServer.prototype = {
 	//Pair-Setup
 	//M1 + M2
 	processPairStepOne: function processPairStepOne(response) {
+		console.log("Start Pair M1");
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
 		var salt = crypto.randomBytes(16);
 		var srp_params = srp.params["3072"];
@@ -247,6 +263,7 @@ HAPServer.prototype = {
 	},
 	//M3 + M4
 	processPairStepTwo: function processPairStepTwo(objects, response) {
+		console.log("Start Pair M3");
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
 
 		var A = objects[3];
@@ -263,6 +280,7 @@ HAPServer.prototype = {
 	},
 	//M5-1
 	processPairStepThree: function processPairStepThree(objects, response) {
+		console.log("Start Pair M5");
 		response.writeHead(200, {"Content-Type": "application/pairing+tlv8"});
 
 		var messageData = Buffer(objects[5].length - 16);
@@ -289,7 +307,7 @@ HAPServer.prototype = {
 	processPairStepFour: function processPairStepFour(clientUsername,clientLTPK,clientProof,response) {
 		this.session_client_LTPK = clientLTPK;
 
-		this.persistStore.setItem(clientUsername.toString(),clientLTPK.toString("hex"));
+		this.persistStore.setItem(this.accessoryInfo.username + clientUsername.toString(),clientLTPK.toString("hex"));
 		this.persistStore.persistSync();
 
 		var S_private = this.srpServer.computeK();
@@ -299,7 +317,7 @@ HAPServer.prototype = {
 		
 		var completeData = Buffer.concat([output_key,clientUsername,clientLTPK]);
 		
-		if (nacl.crypto_sign_verify_detached(toArrayBuffer(clientProof), toArrayBuffer(completeData), toArrayBuffer(clientLTPK))) {
+		if (ed25519.Verify(completeData, clientProof, clientLTPK)) {
 			this.processPairStepFive(response);
 		} else {
 			console.log("Invalid Signature");
@@ -320,8 +338,9 @@ HAPServer.prototype = {
 		var usernameData = Buffer(this.accessoryInfo.username);
 
 		var material = Buffer.concat([output_key,usernameData,serverLTPK_buffer]);
+		var privateKey = Buffer(this.server_sign_keyPair.signSk);
 
-		var serverProof = Buffer(nacl.crypto_sign_detached(toArrayBuffer(material),toArrayBuffer(this.server_sign_keyPair.signSk)));
+		var serverProof = ed25519.Sign(material, privateKey);
 
 		var message = Buffer.concat([tlvHandler.encodeTLV(0x01,usernameData),tlvHandler.encodeTLV(0x03,serverLTPK_buffer),tlvHandler.encodeTLV(0x0a,serverProof)]);
 		var ciphertextBuffer = Buffer(Array(message.length));

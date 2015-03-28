@@ -8,7 +8,7 @@ function TCPServer(servicePort, hapPort, persistStore, accessoryInfo) {
 	}
 	this.servicePort = servicePort;
 	this.persistStore = persistStore;
-	this.accessoryInfo = accessoryInfo;
+    this.accessoryInfo = accessoryInfo;
 	this.hapPort = hapPort;
 	this.server = this.createServer(this.servicePort, this.hapPort);
 	this.sessions = {};
@@ -36,6 +36,9 @@ TCPServer.prototype = {
 	},
 	removeSession: function removeSession(connectPort) {
 		delete this.portMap['connectPort'];
+	},
+	retrieveSession: function retrieveSession(connectPort) {
+		return this.portMap[connectPort];
 	},
 	broadcastEvent: function broadcastEvent(data, subscribedPeers, peer) {
 		var contentData = Buffer(data);

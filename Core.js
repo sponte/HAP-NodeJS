@@ -5,40 +5,68 @@ var accessoryController_Factor = new require("./AccessoryController.js");
 //var service_Factor = new require("./Service.js");
 var characteristic_Factor = new require("./Characteristic.js");
 
-var accessoryFunnel = require("./AccessoryFunnel.js")
-var accessoryGreggs = require("./AccessoryGreggs.js")
+var targetPort = 51826;
 
-var lightwaveRFController_Factor = new require("./LightwaveRFController.js")
-var lightwaveRFController = new lightwaveRFController_Factor.LRFController();
+// Get the accessories data
+var fs = require('fs');
+var path = require('path');
+
+var accessoriesJSON = []
+
+
+// Get user defined accessories from the accessories folder
+// - user defined accessory filenames must end with "_accessory.js"
+fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
+	if (file.split('_').pop()==="accessory.js") {
+		accessoriesJSON.push(require("./accessories/" + file).accessory);
+	};
+});
+
 
 console.log("HAP-NodeJS starting...");
-
-
-//var lightcmd = "python /home/xbian/pyharmony/harmony turn_off";
-//console.log(lightcmd);
-//exec(lightcmd);
-
 storage.initSync();
 
 
-var accessoryControllerFunnel = new accessoryController_Factor.AccessoryController();
+var accessories = [];
+var accessoryControllers = [];
 
-var infoServiceFunnel = accessoryFunnel.generateAccessoryInfoService("Funnel","Rev 1","A1S2NASF88EW","Nlr");
-var lightServiceFunnel = accessoryFunnel.generateLightService(lightwaveRFController);
-accessoryControllerFunnel.addService(infoServiceFunnel);
-accessoryControllerFunnel.addService(lightServiceFunnel);
+//loop through accessories
+for (var i = 0; i < accessoriesJSON.length; i++) {
+	var accessoryController = new accessoryController_Factor.AccessoryController();
 
-var accessoryFunnel = new accessory_Factor.Accessory("Funnel", "1A:2B:3C:4D:5E:FF", storage, parseInt(31822), "031-45-154", accessoryControllerFunnel);
-accessoryFunnel.publishAccessory();
+	//loop through services
+	for (var j = 0; j < accessoriesJSON[i].services.length; j++) {
+		var service = new service_Factor.Service(accessoriesJSON[i].services[j].sType);
 
+		//loop through characteristics
+		for (var k = 0; k < accessoriesJSON[i].services[j].characteristics.length; k++) {
+			var options = {
+				type: accessoriesJSON[i].services[j].characteristics[k].cType,
+				perms: accessoriesJSON[i].services[j].characteristics[k].perms,
+				format: accessoriesJSON[i].services[j].characteristics[k].format,
+				initialValue: accessoriesJSON[i].services[j].characteristics[k].initialValue,
+				supportEvents: accessoriesJSON[i].services[j].characteristics[k].supportEvents,
+				supportBonjour: accessoriesJSON[i].services[j].characteristics[k].supportBonjour,
+				manfDescription: accessoriesJSON[i].services[j].characteristics[k].manfDescription,
+				designedMaxLength: accessoriesJSON[i].services[j].characteristics[k].designedMaxLength,
+				designedMinValue: accessoriesJSON[i].services[j].characteristics[k].designedMinValue,
+				designedMaxValue: accessoriesJSON[i].services[j].characteristics[k].designedMaxValue,
+				designedMinStep: accessoriesJSON[i].services[j].characteristics[k].designedMinStep,
+				unit: accessoriesJSON[i].services[j].characteristics[k].unit,
+			}
 
-var accessoryControllerGreggs = new accessoryController_Factor.AccessoryController();
+			var characteristic = new characteristic_Factor.Characteristic(options, accessoriesJSON[i].services[j].characteristics[k].onUpdate);
 
-var infoServiceGreggs = accessoryGreggs.generateAccessoryInfoService("Greggs","Rev 1","A1S2NASF88EW","Nlr");
-var lightServiceGreggs = accessoryGreggs.generateLightService(lightwaveRFController);
-accessoryControllerGreggs.addService(infoServiceGreggs);
-accessoryControllerGreggs.addService(lightServiceGreggs);
+			service.addCharacteristic(characteristic);
+		};	
+		accessoryController.addService(service);
+	};
 
-var accessoryGreggs = new accessory_Factor.Accessory("Greggs", "CA:2B:3C:4D:5E:BC", storage, parseInt(51822), "031-45-154", accessoryControllerGreggs);
-accessoryGreggs.publishAccessory();
+	//increment targetport for each accessory
+	targetPort = targetPort + (i*2);
 
+	var accessory = new accessory_Factor.Accessory(accessoriesJSON[i].displayName, accessoriesJSON[i].username, storage, parseInt(targetPort), accessoriesJSON[i].pincode, accessoryController);
+	accessories[i] = accessory;
+	accessoryControllers[i] = accessoryController;
+	accessory.publishAccessory();
+};
