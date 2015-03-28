@@ -2,7 +2,7 @@ var storage = require('node-persist');
 
 var accessory_Factor = new require("./Accessory.js");
 var accessoryController_Factor = new require("./AccessoryController.js");
-//var service_Factor = new require("./Service.js");
+var service_Factor = new require("./Service.js");
 var characteristic_Factor = new require("./Characteristic.js");
 
 var targetPort = 51826;
@@ -33,6 +33,8 @@ var accessoryControllers = [];
 //loop through accessories
 for (var i = 0; i < accessoriesJSON.length; i++) {
 	var accessoryController = new accessoryController_Factor.AccessoryController();
+    
+    if(accessoriesJSON[i]==undefined) continue;
 
 	//loop through services
 	for (var j = 0; j < accessoriesJSON[i].services.length; j++) {
