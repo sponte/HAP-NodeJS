@@ -8,9 +8,28 @@ var execSync = require('exec-sync');
 var lightwaveRFController_Factor = new require("./../LightwaveRFController.js")
 var lightwaveRFController = new lightwaveRFController_Factor.LRFController(500);
 
+// Store the brightness to use instead of 'on' in order to prevent going into blinking mode
+var lightsRoomAndNames = [];
+var lightsBrightness = [];
+
+function getBrightness(roomAndName) {
+    var brightness = 30;
+    
+    for(var i=0; i<lightsRoomAndNames.length;i++) {
+        if(lightsRoomAndNames[i] == roomAndName) brighness = lightsBrightness[i];
+    }
+    return brightness;
+}
+
+function setBrightness(roomAndName, brightness) {
+    for(var i=0; i<lightsRoomAndNames.length;i++) {
+        if(lightsRoomAndNames[i] == roomAndName) lightsBrightness[i] = brighness;
+    }
+}
+
 var executePower = function(room,accessory,value){
     var cmd = "lightwaverf " + room + " " + accessory + " ";
-    if(value == true) cmd += "on";
+    if(value == true) cmd += getBrightness(room + accessory);
     else cmd += "off";
     console.log("executePower: " + cmd);
     
@@ -21,6 +40,8 @@ var executeBrightness = function(room,accessory,value){
     var cmd = "lightwaverf " + room + " " + accessory + " ";
     cmd += value;
     console.log("executeBrigtness: " + cmd);
+    
+    setBrightness(room + accessory, value);
     
     lightwaveRFController.exec(cmd);
 }
@@ -206,6 +227,9 @@ function createAccessory(room, name,type) { // TODO take type into account
           }]
       }]
     }
+    
+    lightsRoomAndNames.push(room + name);
+    lightsBrightness.push(30);
 
     return accessory
 }
