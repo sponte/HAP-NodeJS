@@ -7,7 +7,7 @@ var exec = require('child_process').exec;
 function puts(error, stdout, stderr) { sys.puts(stdout) };
 
 var execute = function(accessory,characteristic,value){ console.log("executed accessory: " + accessory + ", and characteristic: " + characteristic + ", with value: " +  value + ".");
-    exec("automator ./accessories/Start_Plex.workflow");
+    if(value=true)    exec("automator ./accessories/Start_Plex.workflow");
 }
 
 exports.accessory = {
