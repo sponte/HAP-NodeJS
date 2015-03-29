@@ -20,7 +20,13 @@ accessoriesJSON.push(require("./accessories/Bridge_Info.js").accessory);
 fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
 	if (file.split('_').pop()==="accessory.js") {
 		accessoriesJSON.push(require("./accessories/" + file).accessory);
-	};
+	}
+    else if (file.split('_').pop()==="accessories.js") {
+        var accessories = require("./accessories/" + file).accessories;
+        for(var i=0;i<accessories.length;i++) {
+            accessoriesJSON.push(accessories[i]);
+        }
+    };
 });
 
 

@@ -5,7 +5,25 @@ var exports = module.exports = {};
 // Exec sync
 var execSync = require('exec-sync');
 
-var execute = function(accessory,characteristic,value){ console.log("executed accessory: " + accessory + ", and characteristic: " + characteristic + ", with value: " +  value + "."); }
+var lightwaveRFController_Factor = new require("./../LightwaveRFController.js")
+var lightwaveRFController = new lightwaveRFController_Factor.LRFController(500);
+
+var executePower = function(room,accessory,value){
+    var cmd = "lightwaverf " + room + " " + accessory + " ";
+    if(value == true) cmd += "on";
+    else cmd += "off";
+    console.log("executePower: " + cmd);
+    
+    lightwaveRFController.exec(cmd);
+}
+
+var executeBrightness = function(room,accessory,value){
+    var cmd = "lightwaverf " + room + " " + accessory + " ";
+    cmd += value;
+    console.log("executeBrigtness: " + cmd);
+    
+    lightwaveRFController.exec(cmd);
+}
 
 console.log("Checking lightwaveRF configuration");
 
@@ -48,7 +66,7 @@ function LRFCallback(error, stdout, stderr, accessories) {
             var endRoomName = room.search(",");
             var roomName = room.substr( startRoomName, endRoomName - startRoomName);
             roomName = roomName.replace("\"",""); roomName = roomName.replace("\"","");
-            console.log("room = " + roomName);
+            //console.log("room = " + roomName);
             
             var startDevicesString = room.substr(room.search("\"device\"=>\\[") + 11);
             //console.log(startDevicesString);
@@ -76,11 +94,11 @@ function LRFCallback(error, stdout, stderr, accessories) {
                     if(tempArray[0].search("type")>=0) deviceType = tempArray[1];
                 }
                 
-                console.log("deviceName = " + deviceName + ", type = " + deviceType);
+                //console.log("deviceName = " + deviceName + ", type = " + deviceType);
                 
 
                 // Finally... add the devices to homekit
-                accessories.push(createAccessory(deviceName,deviceType));
+                accessories.push(createAccessory(roomName, deviceName,deviceType));
             }
         }
     }
@@ -92,7 +110,7 @@ function LRFCallback(error, stdout, stderr, accessories) {
 
 
 
-function createAccessory(name,type) { // TODO take type into account
+function createAccessory(room, name,type) { // TODO take type into account
     var accessory = {
       displayName: name,
       username: "1A:2B:3C:4D:5E:FF",
@@ -164,7 +182,7 @@ function createAccessory(name,type) { // TODO take type into account
             designedMaxLength: 255   
         },{
             cType: types.POWER_STATE_CTYPE,
-            onUpdate: function(value) { console.log("Change:",value); execute("Test LightwaveRF Accessory " + name, "light service", value); },
+            onUpdate: function(value) { console.log("Change:",value); executePower(room, name, value); },
             perms: ["pw","pr","ev"],
             format: "bool",
             initialValue: false,
@@ -174,7 +192,7 @@ function createAccessory(name,type) { // TODO take type into account
             designedMaxLength: 1    
         },{
             cType: types.BRIGHTNESS_CTYPE,
-            onUpdate: function(value) { console.log("Change:",value); execute("Test LightwaveRF Accessory " + name, "Light - Brightness", value); },
+            onUpdate: function(value) { console.log("Change:",value); executeBrightness(room, name, value); },
             perms: ["pw","pr","ev"],
             format: "int",
             initialValue: 0,
