@@ -5,7 +5,7 @@ function puts(error, stdout, stderr) { sys.puts(stdout) };
 
 LRFController.prototype.send = function(cmd, callback) {
   exec(cmd, callback);
-  if (callback) callback();
+  //if (callback) callback();
 };
 
 LRFController.prototype.exec = function() {
