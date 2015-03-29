@@ -6,7 +6,7 @@ var exports = module.exports = {};
 var execSync = require('exec-sync');
 
 var lightwaveRFController_Factor = new require("./../LightwaveRFController.js")
-var lightwaveRFController = new lightwaveRFController_Factor.LRFController(500);
+var lightwaveRFController = new lightwaveRFController_Factor.LRFController(700);
 
 // Store the brightness to use instead of 'on' in order to prevent going into blinking mode
 var lightsRoomAndNames = [];
