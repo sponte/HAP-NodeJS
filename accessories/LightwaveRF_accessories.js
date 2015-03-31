@@ -28,7 +28,7 @@ function setBrightness(roomAndName, brightness) {
 }
 
 var executePower = function(room,accessory,value){
-    var cmd = "lightwaverf " + room + " " + accessory + " ";
+    var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
     if(value == true) cmd += getBrightness(room + accessory);
     else cmd += "off";
     console.log("executePower: " + cmd);
@@ -37,7 +37,7 @@ var executePower = function(room,accessory,value){
 }
 
 var executeBrightness = function(room,accessory,value){
-    var cmd = "lightwaverf " + room + " " + accessory + " ";
+    var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
     cmd += value;
     console.log("executeBrigtness: " + cmd);
     
