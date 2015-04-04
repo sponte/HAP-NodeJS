@@ -16,14 +16,14 @@ function getBrightness(roomAndName) {
     var brightness = 30;
     
     for(var i=0; i<lightsRoomAndNames.length;i++) {
-        if(lightsRoomAndNames[i] == roomAndName) brighness = lightsBrightness[i];
+        if(lightsRoomAndNames[i] == roomAndName) brightness = lightsBrightness[i];
     }
     return brightness;
 }
 
 function setBrightness(roomAndName, brightness) {
     for(var i=0; i<lightsRoomAndNames.length;i++) {
-        if(lightsRoomAndNames[i] == roomAndName) lightsBrightness[i] = brighness;
+        if(lightsRoomAndNames[i] == roomAndName) lightsBrightness[i] = brightness;
     }
 }
 

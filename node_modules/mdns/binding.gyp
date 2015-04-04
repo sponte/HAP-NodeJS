@@ -28,14 +28,19 @@
             'defines': [ 'HAVE_DNSSERVICEGETADDRINFO' ]
         }]
       , ['OS=="win"', {
-            'include_dirs': [ '$(BONJOUR_SDK_HOME)Include' ]
+            'variables': {
+                'BONJOUR_SDK_DIR': '$(BONJOUR_SDK_HOME)', # Preventing path resolution problems by saving the env var in variable first 
+                'PLATFORM': '$(Platform)' # Set  the platform
+              }
+          , 'include_dirs': [ '<(BONJOUR_SDK_DIR)/Include' ]
           , 'defines': [ 'HAVE_DNSSERVICEGETADDRINFO' ]
-          , 'libraries': [ '-l$(BONJOUR_SDK_HOME)Lib/$(Platform)/dnssd.lib'
+          , 'libraries': [ '-l<(BONJOUR_SDK_DIR)/Lib/<(PLATFORM)/dnssd.lib'
                          , '-lws2_32.lib'
                          , '-liphlpapi.lib'
                          ]
         }]
       ]
+    , "include_dirs": [ "<!(node -e \"require('nan')\")" ]
     # The following breaks the debug build, so just ignore the warning for now.
     #, 'msbuild_settings': {
     #    'ClCompile': { 'ExceptionHandling': 'Sync' }
