@@ -1,16 +1,9 @@
-var storage = require('node-persist');
-
-var accessory_Factor = new require("./Accessory.js");
-var accessoryController_Factor = new require("./AccessoryController.js");
-var service_Factor = new require("./Service.js");
-var characteristic_Factor = new require("./Characteristic.js");
-
-var targetPort = 51826;
-
-// Get the accessories data
-var fs = require('fs');
 var path = require('path');
-
+var storage = require('node-persist');
+var uuid = require('./').uuid;
+var Accessory = require('./').Accessory;
+var accessoryLoader = require('./lib/AccessoryLoader');
+/*
 var accessoriesJSON = []
 
 
@@ -27,52 +20,36 @@ fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
         }
     };
 });
-
+*/
 
 console.log("HAP-NodeJS starting...");
+
+// Initialize our storage system
 storage.initSync();
 
+// Our Accessories will each have their own HAP server; we will assign ports sequentially
+var targetPort = 51826;
 
-var accessories = [];
-var accessoryControllers = [];
+// Load up all accessories in the /accessories folder
+var dir = path.join(__dirname, "accessories");
+var accessories = accessoryLoader.loadDirectory(dir);
 
-//loop through accessories
-for (var i = 0; i < accessoriesJSON.length; i++) {
-	var accessoryController = new accessoryController_Factor.AccessoryController();
-
-	//loop through services
-	for (var j = 0; j < accessoriesJSON[i].services.length; j++) {
-		var service = new service_Factor.Service(accessoriesJSON[i].services[j].sType);
-
-		//loop through characteristics
-		for (var k = 0; k < accessoriesJSON[i].services[j].characteristics.length; k++) {
-			var options = {
-				type: accessoriesJSON[i].services[j].characteristics[k].cType,
-				perms: accessoriesJSON[i].services[j].characteristics[k].perms,
-				format: accessoriesJSON[i].services[j].characteristics[k].format,
-				initialValue: accessoriesJSON[i].services[j].characteristics[k].initialValue,
-				supportEvents: accessoriesJSON[i].services[j].characteristics[k].supportEvents,
-				supportBonjour: accessoriesJSON[i].services[j].characteristics[k].supportBonjour,
-				manfDescription: accessoriesJSON[i].services[j].characteristics[k].manfDescription,
-				designedMaxLength: accessoriesJSON[i].services[j].characteristics[k].designedMaxLength,
-				designedMinValue: accessoriesJSON[i].services[j].characteristics[k].designedMinValue,
-				designedMaxValue: accessoriesJSON[i].services[j].characteristics[k].designedMaxValue,
-				designedMinStep: accessoriesJSON[i].services[j].characteristics[k].designedMinStep,
-				unit: accessoriesJSON[i].services[j].characteristics[k].unit,
-			}
-
-			var characteristic = new characteristic_Factor.Characteristic(options, accessoriesJSON[i].services[j].characteristics[k].onUpdate);
-
-			service.addCharacteristic(characteristic);
-		};	
-		accessoryController.addService(service);
-	};
-
-	//increment targetport for each accessory
-	targetPort = targetPort + (i*2);
-
-	var accessory = new accessory_Factor.Accessory(accessoriesJSON[i].displayName, accessoriesJSON[i].username, storage, parseInt(targetPort), accessoriesJSON[i].pincode, accessoryController);
-	accessories[i] = accessory;
-	accessoryControllers[i] = accessoryController;
-	accessory.publishAccessory();
-};
+// Publish them all separately (as opposed to BridgedCore which publishes them behind a single Bridge accessory)
+accessories.forEach(function(accessory) {
+  
+  // To push Accessories separately, we'll need a few extra properties
+  if (!accessory.username)
+    throw new Error("Username not found on accessory '" + accessory.displayName + 
+                    "'. Core.js requires all accessories to define a unique 'username' property.");
+  
+  if (!accessory.pincode)
+    throw new Error("Pincode not found on accessory '" + accessory.displayName + 
+                    "'. Core.js requires all accessories to define a 'pincode' property.");
+  
+  // publish this Accessory on the local network
+  accessory.publish({
+    port: targetPort++,
+    username: accessory.username,
+    pincode: accessory.pincode
+  });
+});
