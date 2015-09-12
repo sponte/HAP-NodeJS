@@ -63,7 +63,7 @@ var lrfLoginPass = data.split("\n");
 //if(!lrfLoginPass.isArray()) return;
 if(!Array.isArray(lrfLoginPass) || lrfLoginPass.size<2) return console.log("lightwaverflogin.txt should contain two lines");
     
-var lrfCMD = "lightwaverf update " + lrfLoginPass.at(0) + " " + lrfLoginPass.at(1);
+var lrfCMD = "lightwaverf update " + lrfLoginPass[0] + " " + lrfLoginPass[1];
 var result = execSync(lrfCMD,true);
 
 exports.accessories = [];

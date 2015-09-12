@@ -5,10 +5,10 @@ var uuid = require('./').uuid;
 var Bridge = require('./').Bridge;
 var Accessory = require('./').Accessory;
 var accessoryLoader = require('./lib/AccessoryLoader');
-/*
+
 var accessoriesJSON = []
 
-accessoriesJSON.push(require("./accessories/Bridge_Info.js").accessory);
+accessoriesJSON.push(require("./accessories/types.js").accessory);
 // Get user defined accessories from the accessories folder
 // - user defined accessory filenames must end with "_accessory.js"
 fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
@@ -22,7 +22,7 @@ fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
         }
     };
 });
-*/
+
 console.log("HAP-NodeJS starting...");
 
 // Initialize our storage system
