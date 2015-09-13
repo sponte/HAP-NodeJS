@@ -5,15 +5,16 @@ var uuid = require('./').uuid;
 var Bridge = require('./').Bridge;
 var Accessory = require('./').Accessory;
 var accessoryLoader = require('./lib/AccessoryLoader');
+var service_Factor = require('./').Service;
 
 var accessoriesJSON = []
 
-accessoriesJSON.push(require("./accessories/types.js").accessory);
+//accessoriesJSON.push(require("./accessories/types.js").accessory);
 // Get user defined accessories from the accessories folder
 // - user defined accessory filenames must end with "_accessory.js"
 fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
 	if (file.split('_').pop()==="accessory.js") {
-		accessoriesJSON.push(require("./accessories/" + file).accessory);
+		//accessoriesJSON.push(require("./accessories/" + file).accessory);
 	}
     else if (file.split('_').pop()==="accessories.js") {
         var accessories = require("./accessories/" + file).accessories;
@@ -45,6 +46,13 @@ var accessories = accessoryLoader.loadDirectory(dir);
 accessories.forEach(function(accessory) {
   bridge.addBridgedAccessory(accessory);
 });
+
+//console.log(accessoriesJSON)
+//loop through accessories
+for (var i = 0; i < accessoriesJSON.length; i++) {
+
+    bridge.addBridgedAccessory(accessoryLoader.parseAccessoryJSON(accessoriesJSON[i]));
+};
 
 // Publish the Bridge on the local network.
 bridge.publish({
