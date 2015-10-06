@@ -56,7 +56,7 @@ for (var i = 0; i < accessoriesJSON.length; i++) {
 
 // Publish the Bridge on the local network.
 bridge.publish({
-  username: "CC:22:3D:E3:CE:F6",
+  username: "CC:22:3D:E3:CE:F7",
   port: 51826,
   pincode: "031-45-154",
   category: Accessory.Categories.OTHER
