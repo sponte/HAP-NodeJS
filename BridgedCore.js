@@ -17,10 +17,20 @@ fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
 		//accessoriesJSON.push(require("./accessories/" + file).accessory);
 	}
     else if (file.split('_').pop()==="accessories.js") {
-        var accessories = require("./accessories/" + file).accessories;
-        for(var i=0;i<accessories.length;i++) {
-            accessoriesJSON.push(accessories[i]);
-        }
+        var accessoriesLoader = require("./accessories/" + file)(function(accessories) {
+					console.log("callback");
+					for(var i=0;i<accessories.length;i++) {
+						console.log("Adding accessory: ", accessories[i].services);
+	        	bridge.addBridgedAccessory(accessoryLoader.parseAccessoryJSON(accessories[i]));
+	        }
+				});
+
+				if(accessoriesLoader && accessoriesLoader.accessories.length > 0) {
+	        var accessories = require("./accessories/" + file).accessories;
+	        for(var i=0;i<accessories.length;i++) {
+	            accessoriesJSON.push(accessories[i]);
+	        }
+				}
     };
 });
 
@@ -50,13 +60,12 @@ accessories.forEach(function(accessory) {
 //console.log(accessoriesJSON)
 //loop through accessories
 for (var i = 0; i < accessoriesJSON.length; i++) {
-
     bridge.addBridgedAccessory(accessoryLoader.parseAccessoryJSON(accessoriesJSON[i]));
 };
 
 // Publish the Bridge on the local network.
 bridge.publish({
-  username: "CC:22:3D:E3:CE:F7",
+  username: "CC:22:3D:E3:CE:F2",
   port: 51826,
   pincode: "031-45-154",
   category: Accessory.Categories.OTHER

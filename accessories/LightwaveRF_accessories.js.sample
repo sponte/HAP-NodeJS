@@ -1,96 +1,75 @@
 // HomeKit types required
 var types = require("./types.js")
-var exports = module.exports = {};
+var lightwaverf = require('lightwaverf-node');
 
-// Exec sync
-var childProcess = require('child_process')
+var callback;
+module.exports = function(callback) {
+  return init(callback);
+}
 
 var lightwaveRFController_Factor = new require("./../LightwaveRFController.js")
 var lightwaveRFController = new lightwaveRFController_Factor.LRFController(900);
 
 // Store the brightness to use instead of 'on' in order to prevent going into blinking mode
-var lightsRoomAndNames = [];
-var lightsBrightness = [];
 
-function getBrightness(roomAndName) {
-    var brightness = 30;
-    
-    for(var i=0; i<lightsRoomAndNames.length;i++) {
-        if(lightsRoomAndNames[i] == roomAndName) brightness = lightsBrightness[i];
-    }
-    return brightness;
-}
-
-function setBrightness(roomAndName, brightness) {
-    for(var i=0; i<lightsRoomAndNames.length;i++) {
-        if(lightsRoomAndNames[i] == roomAndName) lightsBrightness[i] = brightness;
-    }
-}
-
-var executePower = function(room,accessory,value){
+var executePower = function(room, accessory, value) {
     var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
     if(value == true) cmd += "on"; //getBrightness(room + accessory);
     else cmd += "off";
     console.log("executePower: " + cmd);
-    
+
     lightwaveRFController.exec(cmd);
 }
 
-var executeBrightness = function(room,accessory,value){
+var executeBrightness = function(room, accessory, value){
     var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
     cmd += value;
     console.log("executeBrigtness: " + cmd);
-    
-    setBrightness(room + accessory, value);
-    
+
     lightwaveRFController.exec(cmd);
 }
 
 console.log("Checking lightwaveRF configuration");
 
-// Get the lightwaverf login details
-// Note: The file lightwaverflogin.txt should be located in the directory above Core.js and contain two lines
-//       The first line should be the loginname (=email)
-//       The second should be the lightwaverf pin
-fs = require('fs');
-var data = fs.readFileSync('./lightwaverflogin.txt', 'utf8')
+function init(callback) {
+  // Get the lightwaverf login details
+  // Note: The file lightwaverflogin.txt should be located in the directory above Core.js and contain two lines
+  //       The first line should be the loginname (=email)
+  //       The second should be the lightwaverf pin
 
-if (data.err) {
-    return console.log(data.err);
+  fs = require('fs');
+  var data = fs.readFileSync('./lightwaverflogin.txt', 'utf8')
+
+  if (data.err) {
+      return console.log(data.err);
+  }
+  var lrfLoginPass = data.split("\n");
+
+  //if(!lrfLoginPass.isArray()) return;
+  if(!Array.isArray(lrfLoginPass) || lrfLoginPass.size<2) return console.log("lightwaverflogin.txt should contain two lines");
+
+  accessories = [];
+
+  lightwaverf.getRooms(lrfLoginPass[0], lrfLoginPass[1], function(rooms) {
+    LRFCallback(rooms, accessories);
+    callback(accessories);
+  })
 }
-var lrfLoginPass = data.split("\n");
-            
-//if(!lrfLoginPass.isArray()) return;
-if(!Array.isArray(lrfLoginPass) || lrfLoginPass.size<2) return console.log("lightwaverflogin.txt should contain two lines");
-    
-var lrfCMD = "lightwaverf update " + lrfLoginPass[0] + " " + lrfLoginPass[1];
-var result = childProcess.execSync(lrfCMD);
-exports.accessories = [];
-LRFCallback(null,result.toString(),null, exports.accessories);
-
 
 // stdout should contain the configuration
-function LRFCallback(error, stdout, stderr, accessories) {
-    if(stdout) {
-        var rooms = JSON.parse(stdout)
-
+function LRFCallback(rooms, accessories) {
+    if(rooms) {
         for(var i=0; i<rooms.length;i++) {
             var room = rooms[i];
             if(!room.active) continue;
             //console.log(room+"\n");
-            
-            console.log("room = " + room.name);
-            
+
             for(var j=0; j<room.devices.length;j++) {
-                console.log(i + " ---- " + j);
                 var device = room.devices[j];
                 if(!device.active) continue;
-                
-                console.log(device.name);
-                console.log("deviceName = " + device.name + ", type = " + device.status);
-                
+
                 // Only supporting switches and dimmers for now
-                if(device.status != 'O' && device.status != 'D')
+                if(!device.switch && !device.dimmer)
                     continue;
 
                 // Finally... add the devices to homekit
@@ -98,23 +77,17 @@ function LRFCallback(error, stdout, stderr, accessories) {
             }
         }
     }
-    //throw 1; 
-    // If there were errors
-    if(error) return console.log("LRFCallback - Error while obtaining the lightwaverf configuration: " + error);
-    if(stderr) return console.log("LRFCallback - returned the following errors: " + stderr);
 }
 
-
-
-function createAccessory(room, device) { // TODO take type into account
+function createAccessory(room, device) {
     var accessory = {
       displayName: device.name,
       username: "1A:2B:3C:4D:5E:FF",
       pincode: "031-45-154",
       services: [{
-        sType: types.ACCESSORY_INFORMATION_STYPE, 
+        sType: types.ACCESSORY_INFORMATION_STYPE,
         characteristics: [{
-            cType: types.NAME_CTYPE, 
+            cType: types.NAME_CTYPE,
             onUpdate: null,
             perms: ["pr"],
             format: "string",
@@ -122,9 +95,9 @@ function createAccessory(room, device) { // TODO take type into account
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Bla",
-            designedMaxLength: 255    
+            designedMaxLength: 255
         },{
-            cType: types.MANUFACTURER_CTYPE, 
+            cType: types.MANUFACTURER_CTYPE,
             onUpdate: null,
             perms: ["pr"],
             format: "string",
@@ -132,7 +105,7 @@ function createAccessory(room, device) { // TODO take type into account
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Bla",
-            designedMaxLength: 255    
+            designedMaxLength: 255
         },{
             cType: types.MODEL_CTYPE,
             onUpdate: null,
@@ -142,9 +115,9 @@ function createAccessory(room, device) { // TODO take type into account
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Bla",
-            designedMaxLength: 255    
+            designedMaxLength: 255
         },{
-            cType: types.SERIAL_NUMBER_CTYPE, 
+            cType: types.SERIAL_NUMBER_CTYPE,
             onUpdate: null,
             perms: ["pr"],
             format: "string",
@@ -152,9 +125,9 @@ function createAccessory(room, device) { // TODO take type into account
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Bla",
-            designedMaxLength: 255    
+            designedMaxLength: 255
         },{
-            cType: types.IDENTIFY_CTYPE, 
+            cType: types.IDENTIFY_CTYPE,
             onUpdate: null,
             perms: ["pw"],
             format: "bool",
@@ -162,49 +135,53 @@ function createAccessory(room, device) { // TODO take type into account
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Identify Accessory",
-            designedMaxLength: 1    
+            designedMaxLength: 1
         }]
       },{
-        sType: types.LIGHTBULB_STYPE, 
+        sType: types.LIGHTBULB_STYPE,
         characteristics: [{
             cType: types.NAME_CTYPE,
             onUpdate: null,
             perms: ["pr"],
             format: "string",
-            initialValue: device.name + " Light",
+            initialValue: device.name,
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "LightwaveRF",
-            designedMaxLength: 255   
+            designedMaxLength: 255
         },{
             cType: types.POWER_STATE_CTYPE,
-            onUpdate: function(value) { console.log("Change:",value); executePower(room.name, device.name, value); },
+            onUpdate: function(value, callback) { console.log("Change:",value); device.controller.power(value, callback); },
             perms: ["pw","pr","ev"],
             format: "bool",
             initialValue: false,
             supportEvents: false,
             supportBonjour: false,
             manfDescription: "Turn On the Light",
-            designedMaxLength: 1    
-        },{
-            cType: types.BRIGHTNESS_CTYPE,
-            onUpdate: function(value) { console.log("Change:",value); executeBrightness(room.name, device.name, value); },
-            perms: ["pw","pr","ev"],
-            format: "int",
-            initialValue: 0,
-            supportEvents: false,
-            supportBonjour: false,
-            manfDescription: "Adjust Brightness of Light",
-            designedMinValue: 0,
-            designedMaxValue: 100,
-            designedMinStep: 1,
-            unit: "%"
-          }]
+            designedMaxLength: 1
+        }]
       }]
     }
-    
-    lightsRoomAndNames.push(room.name + device.name);
-    lightsBrightness.push(30);
+
+    var dimmerCharacteristic = {
+        cType: types.BRIGHTNESS_CTYPE,
+        onUpdate: function(value) { console.log("Change:",value); executeBrightness(room, device, value); },
+        perms: ["pw","pr","ev"],
+        format: "int",
+        initialValue: 0,
+        supportEvents: false,
+        supportBonjour: false,
+        manfDescription: "Adjust Brightness",
+        designedMinValue: 0,
+        designedMaxValue: 100,
+        designedMinStep: 1,
+        unit: "%"
+      };
+
+      // Only add dimming capability if we are a dimmer
+      if(device.dimmer) {
+        accessory.services[accessory.services.length - 1].characteristics.push(dimmerCharacteristic);
+      }
 
     return accessory
 }

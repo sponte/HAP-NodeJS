@@ -7,7 +7,7 @@
     "curve25519": "git://github.com/volschin/node-curve25519",
     "debug": "^2.2.0",
     "ed25519": "git://github.com/dazoe/ed25519",
-    "http-sync": "^0.1.2",
+    "lightwaverf-node": "git://github.com/sponte/lightwaverf-node.git",
     "mdns": "^2.2.4",
     "node-persist": "0.0.3",
     "srp": "git://github.com/KhaosT/node-srp"
@@ -21,12 +21,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/KhaosT/HAP-NodeJS.git"
+    "url": "https://github.com/sponte/HAP-NodeJS.git"
   },
   "author": "Khaos Tian <khaos.tian@gmail.com> (http://tz.is/)",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/KhaosT/HAP-NodeJS/issues"
   },
-  "homepage": "https://github.com/KhaosT/HAP-NodeJS"
+  "homepage": "https://github.com/sponte/HAP-NodeJS"
 }
