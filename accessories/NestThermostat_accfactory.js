@@ -1,1 +1,0 @@
-../HAP-Accessories/NestThermostat_accfactory.js

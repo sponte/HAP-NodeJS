@@ -1,0 +1,3 @@
+[submodule "HAP-Accessories"]
+	path = HAP-Accessories
+	url = git@github.com:sponte/HAP-Accessories.git
