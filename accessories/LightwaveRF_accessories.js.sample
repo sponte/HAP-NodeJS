@@ -10,25 +10,6 @@ module.exports = function(callback) {
 var lightwaveRFController_Factor = new require("./../LightwaveRFController.js")
 var lightwaveRFController = new lightwaveRFController_Factor.LRFController(900);
 
-// Store the brightness to use instead of 'on' in order to prevent going into blinking mode
-
-var executePower = function(room, accessory, value) {
-    var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
-    if(value == true) cmd += "on"; //getBrightness(room + accessory);
-    else cmd += "off";
-    console.log("executePower: " + cmd);
-
-    lightwaveRFController.exec(cmd);
-}
-
-var executeBrightness = function(room, accessory, value){
-    var cmd = "lightwaverf \'" + room + "\' \'" + accessory + "\' ";
-    cmd += value;
-    console.log("executeBrigtness: " + cmd);
-
-    lightwaveRFController.exec(cmd);
-}
-
 console.log("Checking lightwaveRF configuration");
 
 function init(callback) {
@@ -165,7 +146,7 @@ function createAccessory(room, device) {
 
     var dimmerCharacteristic = {
         cType: types.BRIGHTNESS_CTYPE,
-        onUpdate: function(value) { console.log("Change:",value); executeBrightness(room, device, value); },
+        onUpdate: function(value) { console.log("Change:",value); device.controller.brightness(value, callback); },
         perms: ["pw","pr","ev"],
         format: "int",
         initialValue: 0,
