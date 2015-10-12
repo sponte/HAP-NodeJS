@@ -18,9 +18,7 @@ fs.readdirSync(path.join(__dirname, "accessories")).forEach(function(file) {
 	}
     else if (file.split('_').pop()==="accessories.js") {
         var accessoriesLoader = require("./accessories/" + file)(function(accessories) {
-					console.log("callback");
 					for(var i=0;i<accessories.length;i++) {
-						console.log("Adding accessory: ", accessories[i].services);
 	        	bridge.addBridgedAccessory(accessoryLoader.parseAccessoryJSON(accessories[i]));
 	        }
 				});
@@ -65,7 +63,7 @@ for (var i = 0; i < accessoriesJSON.length; i++) {
 
 // Publish the Bridge on the local network.
 bridge.publish({
-  username: "CC:22:3D:E3:CE:F2",
+  username: "CC:22:3D:E3:CE:F3",
   port: 51826,
   pincode: "031-45-154",
   category: Accessory.Categories.OTHER
