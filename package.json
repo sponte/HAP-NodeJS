@@ -7,7 +7,7 @@
     "curve25519": "git://github.com/volschin/node-curve25519#922eae612bb379fa84e8deb29f80c53d57c8be7b",
     "debug": "^2.2.0",
     "ed25519": "git://github.com/dazoe/ed25519",
-    "lightwaverf-node": "git://github.com/sponte/lightwaverf-node.git",
+    "lightwaverf-node": "git://github.com/sponte/lightwaverf-node.git#5b240aa",
     "mdns": "^2.2.4",
     "node-persist": "0.0.3",
     "srp": "git://github.com/KhaosT/node-srp"
