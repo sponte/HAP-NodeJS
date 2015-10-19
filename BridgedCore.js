@@ -43,6 +43,9 @@ var bridge = new Bridge('Node Bridge', uuid.generate("Node Bridge"));
 // Listen for bridge identification event
 bridge.on('identify', function(paired, callback) {
   console.log("Node Bridge identify");
+
+	// Audible bell
+	process.stdout.write('\x07\x07\x07')
   callback(); // success
 });
 
