@@ -146,7 +146,7 @@ function createAccessory(room, device) {
 
     var dimmerCharacteristic = {
         cType: types.BRIGHTNESS_CTYPE,
-        onUpdate: function(value) { console.log("Change:",value); device.controller.brightness(value, callback); },
+        onUpdate: function(value, callback) { console.log("Change:",value); device.controller.brightness(value, callback); },
         perms: ["pw","pr","ev"],
         format: "int",
         initialValue: 0,
